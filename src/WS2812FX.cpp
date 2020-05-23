@@ -56,7 +56,7 @@
 
 void WS2812FX::init() {
   resetSegmentRuntimes();
-  Adafruit_NeoPixel::begin();
+  _strand->begin();
 }
 
 // void WS2812FX::timer() {
@@ -96,30 +96,30 @@ void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
     uint8_t r = (c >> 16) & 0xFF;
     uint8_t g = (c >>  8) & 0xFF;
     uint8_t b =  c        & 0xFF;
-    Adafruit_NeoPixel::setPixelColor(n, gamma8(r), gamma8(g), gamma8(b), gamma8(w));
+    _strand->setPixelColor(n, _strand->gamma8(r), _strand->gamma8(g), _strand->gamma8(b), _strand->gamma8(w));
   } else {
-    Adafruit_NeoPixel::setPixelColor(n, c);
+    _strand->setPixelColor(n, c);
   }
 }
 
 void WS2812FX::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
   if(IS_GAMMA) {
-    Adafruit_NeoPixel::setPixelColor(n, gamma8(r), gamma8(g), gamma8(b));
+    _strand->setPixelColor(n, _strand->gamma8(r), _strand->gamma8(g), _strand->gamma8(b));
   } else {
-    Adafruit_NeoPixel::setPixelColor(n, r, g, b);
+    _strand->setPixelColor(n, r, g, b);
   }
 }
 
 void WS2812FX::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   if(IS_GAMMA) {
-    Adafruit_NeoPixel::setPixelColor(n, gamma8(r), gamma8(g), gamma8(b), gamma8(w));
+    _strand->setPixelColor(n, _strand->gamma8(r), _strand->gamma8(g), _strand->gamma8(b), _strand->gamma8(w));
   } else {
-    Adafruit_NeoPixel::setPixelColor(n, r, g, b, w);
+    _strand->setPixelColor(n, r, g, b, w);
   }
 }
 
 void WS2812FX::copyPixels(uint16_t dest, uint16_t src, uint16_t count) {
-  uint8_t *pixels = getPixels();
+  uint8_t *pixels = _strand->getPixels();
   uint8_t bytesPerPixel = getNumBytesPerPixel(); // 3=RGB, 4=RGBW
 
   memmove(pixels + (dest * bytesPerPixel), pixels + (src * bytesPerPixel), count * bytesPerPixel);
@@ -128,7 +128,7 @@ void WS2812FX::copyPixels(uint16_t dest, uint16_t src, uint16_t count) {
 // overload show() functions so we can use custom show()
 void WS2812FX::show(void) {
   if(customShow == NULL) {
-    Adafruit_NeoPixel::show();
+    _strand->show();
   } else {
     customShow();
   }
@@ -214,17 +214,17 @@ void WS2812FX::setColors(uint8_t seg, uint32_t* c) {
 
 void WS2812FX::setBrightness(uint8_t b) {
   b = constrain(b, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
-  Adafruit_NeoPixel::setBrightness(b);
+  _strand->setBrightness(b);
   show();
 }
 
 void WS2812FX::increaseBrightness(uint8_t s) {
-  s = constrain(getBrightness() + s, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
+  s = constrain(_strand->getBrightness() + s, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
   setBrightness(s);
 }
 
 void WS2812FX::decreaseBrightness(uint8_t s) {
-  s = constrain(getBrightness() - s, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
+  s = constrain(_strand->getBrightness() - s, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
   setBrightness(s);
 }
 
@@ -234,12 +234,12 @@ void WS2812FX::setLength(uint16_t b) {
 
   // Decrease numLEDs to maximum available memory
   do {
-      Adafruit_NeoPixel::updateLength(b);
+      _strand->updateLength(b);
       b--;
-  } while(!Adafruit_NeoPixel::numLEDs && b > 1);
+  } while(!getLength() && b > 1);
 
   _segments[0].start = 0;
-  _segments[0].stop = Adafruit_NeoPixel::numLEDs - 1;
+  _segments[0].stop = getLength() - 1;
 }
 
 void WS2812FX::increaseLength(uint16_t s) {
@@ -305,15 +305,15 @@ uint8_t WS2812FX::getOptions(uint8_t seg) {
 }
 
 uint16_t WS2812FX::getLength(void) {
-  return numPixels();
+  return _strand->numPixels();
 }
 
 uint16_t WS2812FX::getNumBytes(void) {
-  return numBytes;
+  return getLength() * getNumBytesPerPixel();
 }
 
 uint8_t WS2812FX::getNumBytesPerPixel(void) {
-  return (wOffset == rOffset) ? 3 : 4; // 3=RGB, 4=RGBW
+  return (_strand_offset.wOffset == _strand_offset.rOffset) ? 3 : 4; // 3=RGB, 4=RGBW
 }
 
 uint8_t WS2812FX::getModeCount(void) {
@@ -427,7 +427,7 @@ void WS2812FX::resetSegmentRuntime(uint8_t seg) {
  * Turns everything off. Doh.
  */
 void WS2812FX::strip_off() {
-  Adafruit_NeoPixel::clear();
+  _strand->clear();
   show();
 }
 
@@ -497,9 +497,9 @@ uint16_t WS2812FX::random16(uint16_t lim) {
 // Return the sum of all LED intensities (can be used for
 // rudimentary power calculations)
 uint32_t WS2812FX::intensitySum() {
-  uint8_t *pixels = getPixels();
+  uint8_t *pixels = _strand->getPixels();
   uint32_t sum = 0;
-  for(uint16_t i=0; i <numBytes; i++) {
+  for(uint16_t i=0; i <getNumBytes(); i++) {
     sum+= pixels[i];
   }
   return sum;
@@ -513,9 +513,9 @@ uint32_t* WS2812FX::intensitySums() {
   static uint32_t intensities[] = { 0, 0, 0, 0 };
   memset(intensities, 0, sizeof(intensities));
 
-  uint8_t *pixels = getPixels();
+  uint8_t *pixels = _strand->getPixels();
   uint8_t bytesPerPixel = getNumBytesPerPixel(); // 3=RGB, 4=RGBW
-  for(uint16_t i=0; i <numBytes; i += bytesPerPixel) {
+  for(uint16_t i=0; i <getNumBytes(); i += bytesPerPixel) {
     intensities[0] += pixels[i];
     intensities[1] += pixels[i + 1];
     intensities[2] += pixels[i + 2];
@@ -854,7 +854,7 @@ uint16_t WS2812FX::mode_running_lights(void) {
   uint8_t size = 1 << SIZE_OPTION;
   uint8_t sineIncr = max(1, (256 / SEGMENT_LENGTH) * size);
   for(uint16_t i=0; i < SEGMENT_LENGTH; i++) {
-    int lum = (int)sine8(((i + SEGMENT_RUNTIME.counter_mode_step) * sineIncr));
+    int lum = (int)_strand->sine8(((i + SEGMENT_RUNTIME.counter_mode_step) * sineIncr));
     uint32_t color = color_blend(SEGMENT.colors[0], SEGMENT.colors[1], lum);
     if(IS_REVERSE) {
       setPixelColor(SEGMENT.start + i, color);
@@ -925,7 +925,7 @@ void WS2812FX::fade_out(uint32_t targetColor) {
   int b2 =  color        & 0xff;
 
   for(uint16_t i=SEGMENT.start; i <= SEGMENT.stop; i++) {
-    color = getPixelColor(i); // current color
+    color = _strand->getPixelColor(i); // current color
     if(rate == 0) { // old fade-to-black algorithm
       setPixelColor(i, (color >> 1) & 0x7F7F7F7F);
     } else { // new fade-to-color algorithm
@@ -1412,7 +1412,7 @@ uint16_t WS2812FX::fireworks(uint32_t color) {
   fade_out();
 
 // for better performance, manipulate the Adafruit_NeoPixels pixels[] array directly
-  uint8_t *pixels = getPixels();
+  uint8_t *pixels = _strand->getPixels();
   uint8_t bytesPerPixel = getNumBytesPerPixel(); // 3=RGB, 4=RGBW
   uint16_t startPixel = SEGMENT.start * bytesPerPixel + bytesPerPixel;
   uint16_t stopPixel = SEGMENT.stop * bytesPerPixel ;
