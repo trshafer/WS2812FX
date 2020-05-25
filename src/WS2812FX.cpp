@@ -191,9 +191,9 @@ void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
     uint8_t r = (c >> 16) & 0xFF;
     uint8_t g = (c >>  8) & 0xFF;
     uint8_t b =  c        & 0xFF;
-    strand->setPixelColor(n, strand->gamma8(r), strand->gamma8(g), strand->gamma8(b), strand->gamma8(w));
+    strand->setPixelColor(strandAndPixel.pixel, strand->gamma8(r), strand->gamma8(g), strand->gamma8(b), strand->gamma8(w));
   } else {
-    strand->setPixelColor(n, c);
+    strand->setPixelColor(strandAndPixel.pixel, c);
   }
 }
 
@@ -534,17 +534,19 @@ void WS2812FX::resetSegmentRuntime(uint8_t seg) {
 
 StrandAndPixel WS2812FX::getStrandAndPixel(uint16_t n) {
   int index = 0;
-  Adafruit_NeoPixel* strand = _strands[index];
-  while (n > strand->numPixels()) {
-    n = n - strand->numPixels();
+  auto strand = _strands[index];
+  auto pixel = n;
+
+  if (pixel >= strand->numPixels()) {
+    pixel -= strand->numPixels();
     strand = _strands[++index];
   }
   // StrandAndPixel response = {
   //   strand, n
   // };
   StrandAndPixel response;
-  response.strand = _strands[0];
-  response.pixel = n;
+  response.strand = strand;
+  response.pixel = pixel;
   return response;
 }
 
@@ -553,7 +555,6 @@ uint32_t WS2812FX::getPixelColor(uint16_t pixel) {
   auto strand = strandAndPixel.strand;
   return strand->getPixelColor(strandAndPixel.pixel);
 }
-
 
 /* #####################################################
 #

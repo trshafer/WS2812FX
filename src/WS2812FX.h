@@ -335,6 +335,26 @@ class WS2812FX {
       uint16_t aux_param3; // auxilary param (usually stores a segment index)
     } segment_runtime;
 
+    WS2812FX(Adafruit_NeoPixel** strands, int strandsSize, neoPixelType t) {
+      // _strands = new Adafruit_NeoPixel[1];
+      // Adafruit_NeoPixel* strands[] = {strand};
+      _strands = strands;
+      _strandsSize = strandsSize;
+      initMode();
+      initSegments(t);
+      initFinish();
+    }
+
+    WS2812FX(Adafruit_NeoPixel* strand, neoPixelType t) {
+      // _strands = new Adafruit_NeoPixel[1];
+      Adafruit_NeoPixel* strands[] = {strand};
+      _strands = strands;
+      _strandsSize = 1;
+      initMode();
+      initSegments(t);
+      initFinish();
+    }
+
     WS2812FX(uint16_t n, uint8_t p, neoPixelType t) {
       Adafruit_NeoPixel _createdStrand(n, p, t);
       // _strands = new Adafruit_NeoPixel[1];
