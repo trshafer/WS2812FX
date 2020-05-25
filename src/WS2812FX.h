@@ -305,6 +305,11 @@ static const __FlashStringHelper* _names[] = {
   FSH(name_59)
 };
 
+struct StrandAndPixel {
+  Adafruit_NeoPixel* strand;
+  uint16_t pixel;
+};
+
 class WS2812FX {
 
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -414,12 +419,14 @@ class WS2812FX {
       getSpeed(void),
       getSpeed(uint8_t),
       getLength(void),
+      getNumBytesPerStrand(int),
       getNumBytes(void);
 
     uint32_t
       color_wheel(uint8_t),
       getColor(void),
       getColor(uint8_t),
+      getPixelColor(uint16_t),
       intensitySum(void);
 
     uint32_t* getColors(uint8_t);
@@ -545,11 +552,14 @@ class WS2812FX {
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 16 bytes per element
 
+    StrandAndPixel getStrandAndPixel(uint16_t n);
+
     struct Strand_offsets { // Adafruit offset values
       uint8_t           rOffset;    ///< Red index within each 3- or 4-byte pixel
       uint8_t           wOffset;    ///< Index of white (==rOffset if no white)
     } _strand_offset;
 
+    // initializer functions
     void
       initSegments(neoPixelType t),
       initMode(),
